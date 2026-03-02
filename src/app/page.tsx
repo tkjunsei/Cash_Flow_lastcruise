@@ -58,12 +58,12 @@ export default function HomePage() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-800">
-            ワリカン
+            収支管理
           </h1>
           <p className="text-slate-500 leading-relaxed">
             ログイン不要。URLを共有するだけで
             <br />
-            みんなの支出をかんたんに管理。
+            みんなの収支をかんたんに管理。
           </p>
         </div>
 
@@ -111,7 +111,7 @@ export default function HomePage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-400">
-          © 2025 ワリカン — 共有型家計簿アプリ
+          © 2026 収支管理 — 共有型家計簿アプリ
         </p>
       </div>
     </main>

@@ -76,8 +76,8 @@ export function TransactionForm({
                     type="button"
                     onClick={() => setType("income")}
                     className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${type === "income"
-                            ? "bg-blue-50 text-blue-600 shadow-sm border border-blue-200"
-                            : "text-slate-500 hover:text-slate-700"
+                        ? "bg-blue-50 text-blue-600 shadow-sm border border-blue-200"
+                        : "text-slate-500 hover:text-slate-700"
                         }`}
                 >
                     <span className="flex items-center gap-1.5">
@@ -101,8 +101,8 @@ export function TransactionForm({
                     type="button"
                     onClick={() => setType("expense")}
                     className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${type === "expense"
-                            ? "bg-orange-50 text-orange-600 shadow-sm border border-orange-200"
-                            : "text-slate-500 hover:text-slate-700"
+                        ? "bg-orange-50 text-orange-600 shadow-sm border border-orange-200"
+                        : "text-slate-500 hover:text-slate-700"
                         }`}
                 >
                     <span className="flex items-center gap-1.5">
@@ -155,11 +155,11 @@ export function TransactionForm({
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="paid_by" className="text-slate-600">
-                        {type === "income" ? "受取人" : "支払った人"}
+                        {type === "income" ? "タイプ" : "タイプ"}
                     </Label>
                     <Input
                         id="paid_by"
-                        placeholder="例: 太郎"
+                        placeholder="例: 食費"
                         value={paidBy}
                         onChange={(e) => setPaidBy(e.target.value)}
                         className="border-slate-200 focus:ring-blue-500 focus:border-blue-500"
@@ -194,8 +194,8 @@ export function TransactionForm({
                     type="submit"
                     disabled={loading}
                     className={`min-w-[100px] text-white transition-colors ${type === "income"
-                            ? "bg-blue-500 hover:bg-blue-600"
-                            : "bg-orange-500 hover:bg-orange-600"
+                        ? "bg-blue-500 hover:bg-blue-600"
+                        : "bg-orange-500 hover:bg-orange-600"
                         }`}
                 >
                     {loading ? (

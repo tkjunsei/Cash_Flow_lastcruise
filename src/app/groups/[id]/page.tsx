@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 
-type TabType = "list" | "chart";
+
 
 export default function GroupPage() {
     const params = useParams();
@@ -31,7 +31,7 @@ export default function GroupPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
-    const [activeTab, setActiveTab] = useState<TabType>("list");
+
     const [showAddForm, setShowAddForm] = useState(false);
 
     const fetchGroup = useCallback(async () => {
@@ -348,38 +348,15 @@ export default function GroupPage() {
                     )}
                 </Card>
 
-                {/* Tabs */}
-                <div className="flex gap-1 p-1 rounded-xl bg-slate-100 w-fit">
-                    <button
-                        onClick={() => setActiveTab("list")}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "list"
-                                ? "bg-white text-slate-800 shadow-sm"
-                                : "text-slate-500 hover:text-slate-700"
-                            }`}
-                    >
-                        一覧
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("chart")}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "chart"
-                                ? "bg-white text-slate-800 shadow-sm"
-                                : "text-slate-500 hover:text-slate-700"
-                            }`}
-                    >
-                        グラフ
-                    </button>
-                </div>
+                {/* グラフ */}
+                <TransactionCharts transactions={transactions} />
 
-                {/* Content */}
-                {activeTab === "list" ? (
-                    <TransactionList
-                        transactions={transactions}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                    />
-                ) : (
-                    <TransactionCharts transactions={transactions} />
-                )}
+                {/* 一覧 */}
+                <TransactionList
+                    transactions={transactions}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                />
             </div>
         </main>
     );

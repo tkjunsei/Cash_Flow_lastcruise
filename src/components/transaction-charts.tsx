@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Transaction } from "@/types/database";
+import { CHART_COLORS } from "@/lib/colors";
 import {
     PieChart,
     Pie,
@@ -16,16 +17,7 @@ import {
     Legend,
 } from "recharts";
 
-const COLORS = [
-    "#60a5fa",
-    "#34d399",
-    "#fbbf24",
-    "#a78bfa",
-    "#fb923c",
-    "#38bdf8",
-    "#f472b6",
-    "#4ade80",
-];
+
 
 interface TransactionChartsProps {
     transactions: Transaction[];
@@ -110,7 +102,7 @@ export function TransactionCharts({ transactions }: TransactionChartsProps) {
             {expenseByPerson.length > 0 && (
                 <div className="space-y-3">
                     <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-                        支出 — 担当者別 割合
+                        支出 — タイプ別 割合
                     </h3>
                     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                         <ResponsiveContainer width="100%" height={300}>
@@ -130,7 +122,7 @@ export function TransactionCharts({ transactions }: TransactionChartsProps) {
                                     {expenseByPerson.map((_, index) => (
                                         <Cell
                                             key={`cell-${index}`}
-                                            fill={COLORS[index % COLORS.length]}
+                                            fill={CHART_COLORS[index % CHART_COLORS.length]}
                                             stroke="transparent"
                                         />
                                     ))}
@@ -138,7 +130,7 @@ export function TransactionCharts({ transactions }: TransactionChartsProps) {
                                 <Tooltip
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     formatter={(value: any) => [
-                                        `¥${Number(value).toLocaleString()}`,
+                                        `${Number(value).toLocaleString()}`,
                                         "金額",
                                     ]}
                                     contentStyle={{
@@ -214,7 +206,7 @@ export function TransactionCharts({ transactions }: TransactionChartsProps) {
             {paidByData.length > 0 && (
                 <div className="space-y-3 lg:col-span-2">
                     <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-                        担当者別 収支
+                        タイプ別 収支
                     </h3>
                     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                         <ResponsiveContainer width="100%" height={250}>

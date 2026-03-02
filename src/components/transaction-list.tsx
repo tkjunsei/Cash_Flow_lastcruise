@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Transaction, TransactionType } from "@/types/database";
+import { getColorMap } from "@/lib/colors";
 import { Button } from "@/components/ui/button";
 import {
     Table,
@@ -51,6 +52,12 @@ export function TransactionList({
     const totalExpense = transactions
         .filter((t) => t.type === "expense")
         .reduce((s, t) => s + t.amount, 0);
+
+    // paid_by の値ごとにカラーマッピングを生成（円グラフと同じ色順）
+    const colorMap = useMemo(() => {
+        const keys = transactions.map((t) => t.paid_by || "未設定");
+        return getColorMap(keys);
+    }, [transactions]);
 
     const handleEdit = async (data: {
         type: TransactionType;
@@ -106,7 +113,7 @@ export function TransactionList({
                     <TableHeader>
                         <TableRow className="bg-slate-50 hover:bg-slate-50">
                             <TableHead className="font-semibold text-slate-600 w-[40px]">
-                                種別
+                                収入or支出
                             </TableHead>
                             <TableHead className="font-semibold text-slate-600">
                                 日付
@@ -115,7 +122,7 @@ export function TransactionList({
                                 項目
                             </TableHead>
                             <TableHead className="font-semibold text-slate-600">
-                                担当
+                                タイプ
                             </TableHead>
                             <TableHead className="text-right font-semibold text-slate-600">
                                 金額
@@ -174,23 +181,26 @@ export function TransactionList({
                                     {tx.title}
                                 </TableCell>
                                 <TableCell>
-                                    {tx.paid_by ? (
-                                        <span
-                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tx.type === "income"
-                                                    ? "bg-blue-50 text-blue-600"
-                                                    : "bg-orange-50 text-orange-600"
-                                                }`}
-                                        >
-                                            {tx.paid_by}
-                                        </span>
-                                    ) : (
-                                        <span className="text-slate-400 text-xs">未設定</span>
-                                    )}
+                                    {(() => {
+                                        const key = tx.paid_by || "未設定";
+                                        const colors = colorMap.get(key);
+                                        return (
+                                            <span
+                                                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                                                style={{
+                                                    backgroundColor: colors?.bg || "#f1f5f9",
+                                                    color: colors?.main || "#64748b",
+                                                }}
+                                            >
+                                                {key}
+                                            </span>
+                                        );
+                                    })()}
                                 </TableCell>
                                 <TableCell
                                     className={`text-right font-mono font-semibold tabular-nums ${tx.type === "income"
-                                            ? "text-emerald-600"
-                                            : "text-rose-500"
+                                        ? "text-emerald-600"
+                                        : "text-rose-500"
                                         }`}
                                 >
                                     {tx.type === "income" ? "+" : "-"} ¥
