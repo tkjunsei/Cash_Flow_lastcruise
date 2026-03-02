@@ -3,11 +3,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Group, Expense } from "@/types/database";
+import { Group, Transaction, TransactionType } from "@/types/database";
 import { addRecentGroup } from "@/lib/history";
-import { ExpenseForm } from "@/components/expense-form";
-import { ExpenseList } from "@/components/expense-list";
-import { ExpenseCharts } from "@/components/expense-charts";
+import { TransactionForm } from "@/components/transaction-form";
+import { TransactionList } from "@/components/transaction-list";
+import { TransactionCharts } from "@/components/transaction-charts";
 import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +28,7 @@ export default function GroupPage() {
     const groupId = params.id as string;
 
     const [group, setGroup] = useState<Group | null>(null);
-    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>("list");
@@ -51,77 +51,96 @@ export default function GroupPage() {
         addRecentGroup(data.id, data.name);
     }, [groupId]);
 
-    const fetchExpenses = useCallback(async () => {
+    const fetchTransactions = useCallback(async () => {
         const { data, error } = await supabase
-            .from("expenses")
+            .from("transactions")
             .select("*")
             .eq("group_id", groupId)
             .order("date", { ascending: false });
 
         if (!error && data) {
-            setExpenses(data);
+            setTransactions(data);
         }
     }, [groupId]);
 
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
-            await Promise.all([fetchGroup(), fetchExpenses()]);
+            await Promise.all([fetchGroup(), fetchTransactions()]);
             setLoading(false);
         };
         loadData();
-    }, [fetchGroup, fetchExpenses]);
+    }, [fetchGroup, fetchTransactions]);
 
-    const handleAddExpense = async (data: {
+    const handleAdd = async (data: {
+        type: TransactionType;
         title: string;
         amount: number;
         paid_by: string;
         date: string;
     }) => {
-        const { error } = await supabase.from("expenses").insert({
+        const { error } = await supabase.from("transactions").insert({
             group_id: groupId,
             ...data,
         });
 
         if (error) {
-            toast.error("支出の追加に失敗しました");
+            toast.error("記録の追加に失敗しました");
             return;
         }
 
-        toast.success("支出を追加しました");
+        toast.success(data.type === "income" ? "収入を追加しました" : "支出を追加しました");
         setShowAddForm(false);
-        await fetchExpenses();
+        await fetchTransactions();
     };
 
-    const handleEditExpense = async (
+    const handleEdit = async (
         id: string,
-        data: { title: string; amount: number; paid_by: string; date: string }
+        data: {
+            type: TransactionType;
+            title: string;
+            amount: number;
+            paid_by: string;
+            date: string;
+        }
     ) => {
         const { error } = await supabase
-            .from("expenses")
+            .from("transactions")
             .update(data)
             .eq("id", id);
 
         if (error) {
-            toast.error("支出の更新に失敗しました");
+            toast.error("記録の更新に失敗しました");
             return;
         }
 
-        toast.success("支出を更新しました");
-        await fetchExpenses();
+        toast.success("記録を更新しました");
+        await fetchTransactions();
     };
 
-    const handleDeleteExpense = async (id: string) => {
-        const { error } = await supabase.from("expenses").delete().eq("id", id);
+    const handleDelete = async (id: string) => {
+        const { error } = await supabase
+            .from("transactions")
+            .delete()
+            .eq("id", id);
 
         if (error) {
-            toast.error("支出の削除に失敗しました");
+            toast.error("記録の削除に失敗しました");
             return;
         }
 
-        toast.success("支出を削除しました");
-        await fetchExpenses();
+        toast.success("記録を削除しました");
+        await fetchTransactions();
     };
+
+    // 収支計算
+    const totalIncome = transactions
+        .filter((t) => t.type === "income")
+        .reduce((s, t) => s + t.amount, 0);
+    const totalExpense = transactions
+        .filter((t) => t.type === "expense")
+        .reduce((s, t) => s + t.amount, 0);
+    const balance = totalIncome - totalExpense;
 
     if (loading) {
         return (
@@ -200,53 +219,112 @@ export default function GroupPage() {
                                 {group?.name}
                             </h1>
                             <p className="text-sm text-slate-500">
-                                支出を管理・共有しましょう
+                                収支を管理・共有しましょう
                             </p>
                         </div>
                     </div>
                     <ShareButton />
                 </div>
 
-                {/* Summary Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {/* ① サマリーパネル: 総収入・総支出・残高 */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Card className="bg-white border-slate-200 shadow-sm">
                         <CardContent className="pt-4 pb-4">
-                            <p className="text-xs text-slate-500 font-medium">合計支出</p>
-                            <p className="text-2xl font-bold font-mono tabular-nums text-slate-800 mt-1">
-                                ¥{expenses.reduce((s, e) => s + e.amount, 0).toLocaleString()}
+                            <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                                    <svg
+                                        className="h-4 w-4 text-emerald-500"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M7 11l5-5m0 0l5 5m-5-5v12"
+                                        />
+                                    </svg>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium">総収入</p>
+                            </div>
+                            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-600 mt-2">
+                                ¥{totalIncome.toLocaleString()}
                             </p>
                         </CardContent>
                     </Card>
+
                     <Card className="bg-white border-slate-200 shadow-sm">
                         <CardContent className="pt-4 pb-4">
-                            <p className="text-xs text-slate-500 font-medium">件数</p>
-                            <p className="text-2xl font-bold font-mono tabular-nums text-slate-800 mt-1">
-                                {expenses.length}
-                                <span className="text-sm text-slate-400 ml-1">件</span>
+                            <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-lg bg-rose-50 flex items-center justify-center">
+                                    <svg
+                                        className="h-4 w-4 text-rose-500"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M17 13l-5 5m0 0l-5-5m5 5V6"
+                                        />
+                                    </svg>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium">総支出</p>
+                            </div>
+                            <p className="text-2xl font-bold font-mono tabular-nums text-rose-500 mt-2">
+                                ¥{totalExpense.toLocaleString()}
                             </p>
                         </CardContent>
                     </Card>
-                    <Card className="bg-white border-slate-200 shadow-sm col-span-2 sm:col-span-1">
+
+                    <Card className="bg-white border-slate-200 shadow-sm">
                         <CardContent className="pt-4 pb-4">
-                            <p className="text-xs text-slate-500 font-medium">メンバー</p>
-                            <p className="text-2xl font-bold font-mono tabular-nums text-slate-800 mt-1">
-                                {new Set(expenses.map((e) => e.paid_by).filter(Boolean)).size}
-                                <span className="text-sm text-slate-400 ml-1">人</span>
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className={`h-8 w-8 rounded-lg flex items-center justify-center ${balance >= 0 ? "bg-blue-50" : "bg-red-50"
+                                        }`}
+                                >
+                                    <svg
+                                        className={`h-4 w-4 ${balance >= 0 ? "text-blue-500" : "text-red-500"
+                                            }`}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
+                                        />
+                                    </svg>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium">残高</p>
+                            </div>
+                            <p
+                                className={`text-2xl font-bold font-mono tabular-nums mt-2 ${balance >= 0 ? "text-blue-600" : "text-red-500"
+                                    }`}
+                            >
+                                {balance < 0 ? "-" : ""}¥
+                                {Math.abs(balance).toLocaleString()}
                             </p>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Add Expense */}
+                {/* 記録を追加 */}
                 <Card className="bg-white border-slate-200 shadow-sm">
                     <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle className="text-lg text-slate-800">
-                                    支出を追加
+                                    記録を追加
                                 </CardTitle>
                                 <CardDescription className="text-slate-500">
-                                    新しい支出を記録します
+                                    収入または支出を記録します
                                 </CardDescription>
                             </div>
                             <Button
@@ -265,7 +343,7 @@ export default function GroupPage() {
                     </CardHeader>
                     {showAddForm && (
                         <CardContent>
-                            <ExpenseForm onSubmit={handleAddExpense} />
+                            <TransactionForm onSubmit={handleAdd} />
                         </CardContent>
                     )}
                 </Card>
@@ -294,13 +372,13 @@ export default function GroupPage() {
 
                 {/* Content */}
                 {activeTab === "list" ? (
-                    <ExpenseList
-                        expenses={expenses}
-                        onEdit={handleEditExpense}
-                        onDelete={handleDeleteExpense}
+                    <TransactionList
+                        transactions={transactions}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
                     />
                 ) : (
-                    <ExpenseCharts expenses={expenses} />
+                    <TransactionCharts transactions={transactions} />
                 )}
             </div>
         </main>

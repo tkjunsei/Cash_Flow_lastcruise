@@ -9,9 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ワリカン - 共有型家計簿アプリ",
-  description:
-    "ログイン不要でURLを共有するだけ。みんなの支出をかんたんに管理できる共有型家計簿アプリ。",
+  title: "収支管理",
+  description: "手軽に収支管理を。",
   robots: { index: false, follow: false },
 };
 
