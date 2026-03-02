@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { Group, Transaction, TransactionType } from "@/types/database";
 import { addRecentGroup } from "@/lib/history";
 import { TransactionForm } from "@/components/transaction-form";
@@ -20,8 +19,6 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 
-
-
 export default function GroupPage() {
     const params = useParams();
     const router = useRouter();
@@ -31,34 +28,24 @@ export default function GroupPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
-
     const [showAddForm, setShowAddForm] = useState(false);
 
     const fetchGroup = useCallback(async () => {
-        const { data, error } = await supabase
-            .from("groups")
-            .select("*")
-            .eq("id", groupId)
-            .single();
-
-        if (error || !data) {
+        const res = await fetch(`/api/groups/${groupId}`);
+        if (!res.ok) {
             setNotFound(true);
             setLoading(false);
             return;
         }
-
+        const data = await res.json();
         setGroup(data);
         addRecentGroup(data.id, data.name);
     }, [groupId]);
 
     const fetchTransactions = useCallback(async () => {
-        const { data, error } = await supabase
-            .from("transactions")
-            .select("*")
-            .eq("group_id", groupId)
-            .order("date", { ascending: false });
-
-        if (!error && data) {
+        const res = await fetch(`/api/groups/${groupId}/transactions`);
+        if (res.ok) {
+            const data = await res.json();
             setTransactions(data);
         }
     }, [groupId]);
@@ -79,12 +66,13 @@ export default function GroupPage() {
         paid_by: string;
         date: string;
     }) => {
-        const { error } = await supabase.from("transactions").insert({
-            group_id: groupId,
-            ...data,
+        const res = await fetch(`/api/groups/${groupId}/transactions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
         });
 
-        if (error) {
+        if (!res.ok) {
             toast.error("記録の追加に失敗しました");
             return;
         }
@@ -104,12 +92,13 @@ export default function GroupPage() {
             date: string;
         }
     ) => {
-        const { error } = await supabase
-            .from("transactions")
-            .update(data)
-            .eq("id", id);
+        const res = await fetch(`/api/groups/${groupId}/transactions/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+        });
 
-        if (error) {
+        if (!res.ok) {
             toast.error("記録の更新に失敗しました");
             return;
         }
@@ -119,12 +108,11 @@ export default function GroupPage() {
     };
 
     const handleDelete = async (id: string) => {
-        const { error } = await supabase
-            .from("transactions")
-            .delete()
-            .eq("id", id);
+        const res = await fetch(`/api/groups/${groupId}/transactions/${id}`, {
+            method: "DELETE",
+        });
 
-        if (error) {
+        if (!res.ok) {
             toast.error("記録の削除に失敗しました");
             return;
         }

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,13 +19,15 @@ export default function HomePage() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("groups")
-        .insert({ name: groupName.trim() })
-        .select()
-        .single();
+      const res = await fetch("/api/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: groupName.trim() }),
+      });
 
-      if (error) throw error;
+      if (!res.ok) throw new Error("Failed to create group");
+
+      const data = await res.json();
       router.push(`/groups/${data.id}`);
     } catch {
       toast.error("グループの作成に失敗しました", {
